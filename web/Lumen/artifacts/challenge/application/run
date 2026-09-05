@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+node /app/bot.js &
+exec php -d display_errors=1 -d output_buffering=0 -d max_input_vars=1000 -d variables_order=GPCS -S 0.0.0.0:5000 -t /app/public

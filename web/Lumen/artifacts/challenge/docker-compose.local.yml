@@ -1,0 +1,11 @@
+services:
+  web_lumen:
+    build:
+      context: .
+      target: base
+    ports:
+      - 5000:5000
+    environment:
+      DYN_FLAG: "BHFlagY{local_test_flag}"
+    mem_limit: 1G
+    cpus: 1.0
