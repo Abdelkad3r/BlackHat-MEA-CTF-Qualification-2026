@@ -8,6 +8,7 @@ Writeups and solution artifacts.
 |---|---|---|
 | [Qfact](forensics/Qfact/) | Forensics | `BHFlagY{d3f3nd3r_qu4r4nt1n3_r3c0v3ry_2026}` |
 | [Whisper](forensics/Whisper/) | Forensics | `BHFlagY{l0c4l_0ll4m4_llm_f4r3n51c5_2026}` |
+| [Hokan](crypto/Hokan/) | Crypto | `BHFlagY{b76085b3a7563a438da13397e0a8da14}` |
 
 ## Repository layout
 
