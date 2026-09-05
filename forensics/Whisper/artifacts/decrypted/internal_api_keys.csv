@@ -1,0 +1,40 @@
+service,key_b64,environment,owner,team,created,expires,status
+payment_gateway_v2,cGtfbGl2ZV84YW04Z3NLOEV0UnM1amJNbk84cWZ2M24=,production,stripe,finance_team,7/15/2023,10/21/2025,Active
+payment_gateway_v2,cGtfdGVzdF9iMkcwRng2cWs5Q0Z4bEtxSjFjaUprQXc=,staging,stripe,finance_team,3/13/2025,2/15/2025,Rotation Due
+crm_api,Y3JtX3Byb2RfVjRoZkczRUlWVUhjTUsxOVFBUWRuSlhu,production,salesforce,sales_ops,4/8/2024,6/26/2025,Active
+crm_api,Y3JtX3Rlc3RfenZOU0FiUWtpYjNDcVlJVWY5RlJoREZ1,staging,salesforce,sales_ops,8/30/2023,12/13/2025,Active
+analytics_v3,Z2FfcHJvZF9pZ25SOWVpWU9yOHBGcnl1dEZmTGhjSGY=,production,google_analytics,marketing,3/16/2024,11/15/2025,Active
+email_service,c2dfbGl2ZV9rVTJ6MG1MR08yeWprdVpaaXBhelJWNjU=,production,sendgrid,it_ops,11/21/2023,5/17/2025,Active
+email_service,c2dfdGVzdF9QNVZ0OGd1R1ZSd21MT2VFUTdYTlBQRkI=,staging,sendgrid,it_ops,5/20/2024,5/3/2025,Active
+cdn_manager,Y2ZfcHJvZF9GTHo5aHVVQllDQUJEMDdoYzRGdElwcDE=,production,cloudflare,devops,6/25/2024,4/11/2025,Active
+logging_service,ZGRfcHJvZF9YQW9SR0lsNEZja3pWNU41b25KZ3FCUHo=,production,datadog,sre_team,9/12/2025,7/1/2025,Active
+logging_service,ZGRfc3RnX2pvdkU0OE85c1NmSEIyc0xYM1dmMnpBRg==,staging,datadog,sre_team,2/27/2024,2/4/2025,Active
+auth_service,YXV0aDBfcHJvZF9qZHRlc0FIVDJOWndKajRhWm5pNHFpUDA=,production,auth0,security_team,8/10/2025,6/2/2025,Active
+auth_service,YXV0aDBfdGVzdF8zbDdraXZGV1gzU3l2dGdUMXhQZHk3RVg=,staging,auth0,security_team,4/5/2023,1/25/2025,Active
+ci_cd_pipeline,Z2hfYWN0aW9uc19NOTRiZjFvT0JyMTBqcnNvaHR0b1ZRRUs=,production,github,devops,5/10/2024,4/13/2025,Active
+artifact_registry,Z2NyX3Byb2RfM0hMVDdJckpFMTlBZVh0UEl0QVVhSFZQ,production,google_artifact,devops,10/23/2023,10/29/2025,Active
+secret_manager,dmF1bHRfdG9rX2V1R1gyaGFPNlFoTjRrWmliS3p5WFZDZw==,production,hashicorp,security_team,6/26/2025,6/22/2025,Active
+monitoring,cGFnZXJfa2V5X0RIanBPUWZ2ZnNhSU1vSzMwcmlWTm5HSQ==,production,pagerduty,sre_team,10/7/2023,10/27/2025,Rotation Due
+feature_flags,bGRfc2RrX1lUMFRJUk9aYkVuVlkyaDFEUFJRZUxyaA==,production,launchdarkly,product,7/24/2023,2/20/2025,Active
+search_engine,YWxnb2xpYV9rZXlfUnc2d0FuQTc4c1Mxd1ZwbE9Pdk44YUFD,production,algolia,engineering,11/12/2025,4/21/2025,Active
+database_proxy,cGdiX2F1dGhfSW1UY29yVWp2ZzVad0p0YUI2WE90YmRt,production,pgbouncer,dba_team,7/29/2025,7/1/2025,Rotation Due
+message_queue,cm1xX3Byb2RfQUs0REk1MDhqV2ZHdnM3N2NHMzE5cmpw,production,rabbitmq,engineering,12/11/2023,4/21/2025,Active
+cache_service,cmVkaXNfYXV0aF80TnpuQjJ3Zlgxcm14T1phTUFjdlFodnY=,production,redis_cloud,engineering,3/2/2023,5/15/2025,Active
+object_storage,czNfYWNjZXNzXzFZSXcyQkREODY4QjBIRmp4dlBGaXAyZw==,production,aws_s3,devops,12/31/2023,11/23/2025,Rotation Due
+dns_management,cjUzX2tleV9VUlZxWUZEOVZXV3JhQU03ZGlTZzFISnk=,production,aws_route53,devops,2/19/2025,6/4/2025,Active
+container_registry,ZWNyX3Rva19oclhSM3kybXYyaWVzQ21yTDlFSEFYSFQ=,production,aws_ecr,devops,6/29/2023,9/11/2025,Active
+backup_service,YmtfYXV0aF9Xc0x4S3FEbGVkVzVsTW9VbjFSejBXcmc=,production,backup_system,sre_team,2/28/2024,10/26/2025,Active
+audit_trail,YXVkaXRfa2V5X3hjTEhuOVZ4eGl4RlV6cWxOTlNMTXp6MA==,production,audit_service,security_team,2/22/2024,10/10/2025,Active
+data_pipeline,ZHBfcHJvZF9vMWR1SXBkbmhFeE5LUTVIS1gydU9nbnA=,production,airflow,engineering,9/27/2023,2/10/2025,Active
+ml_serving,bWxfYXBpX0w1ZEpwa3RMNDZQMG5XYzdSMWRBMW9pTQ==,production,sagemaker,data_science,11/5/2024,5/2/2025,Active
+notification_svc,bm90aWZfa2V5X2tEN2FQY2pLQk01c3F0VFRDNHc2djExNQ==,production,sns,engineering,1/18/2023,4/22/2025,Active
+api_gateway,YXBpZ3dfa2V5XzdhSXB2MTlvSUQ3QzQ3R1ZqTkV5N3hhbw==,production,kong,devops,11/22/2024,4/24/2025,Active
+master_vault,QkhGbGFnWXtsMGM0bF8wbGw0bTRfbGxtX2Y0cjNuNTFjNV8yMDI2fQ==,production,vault_root,security_team,11/1/2024,12/31/2025,Active
+log_archiver,c3NfVG9xd29KU0ZnMmNic0hJQWk4VENYRUdG,production,log_archiver_int,devops,12/6/2023,5/2/2025,Active
+rate_limiter,c3NfNjFrVTJpQlplTDZJTTRxRW02a2gwUVpZ,production,rate_limiter_int,sre_team,11/12/2023,9/29/2025,Active
+log_archiver,cmxfb0YwbjVHaVBweW9MTExORllwOXI3VDg3,staging,log_archiver_int,sre_team,12/6/2023,11/22/2025,Active
+session_store,anNfSlZiS0RhRW85a0ltZzg3N3VMYUZRNGd1,staging,session_store_int,engineering,2/16/2024,10/29/2025,Active
+job_scheduler,cmxfeHl5WWVGUXEyVmtpSlBqRm92dHZxSmoz,staging,job_scheduler_int,engineering,7/27/2023,10/26/2025,Active
+log_archiver,cmxfaXNJV1ROTk5sOWRYcFRHV3FZeTNkeTlO,staging,log_archiver_int,devops,3/25/2025,6/21/2025,Active
+job_scheduler,cmxfZjhlcENwNG5zdVZ4VUtxUUtpU0hPd0d2,staging,job_scheduler_int,devops,6/28/2023,1/9/2025,Active
+rate_limiter,aG1fU3hnWUZxa1VRWENDZHBLTDZhRFpNNGdR,production,rate_limiter_int,engineering,12/6/2023,12/3/2025,Active

