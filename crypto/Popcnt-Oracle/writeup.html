@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Popcnt Oracle — Black Hat MEA CTF Qualification 2026</title>
+<style>
+:root{--bg:#eef1f4;--paper:#fff;--ink:#17202b;--muted:#5b6674;--rule:#d6dce3;--accent:#a34e00;--wash:#f8ead8;--code:#18202a;--good:#0a6b60}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 Georgia,"Times New Roman",serif}.page{max-width:1040px;margin:auto;background:var(--paper);min-height:100vh;padding:56px clamp(22px,6vw,76px) 84px;box-shadow:0 0 28px #18202a18}header{border-bottom:1px solid var(--rule);padding-bottom:32px}.eyebrow,.meta,nav,.step,footer{font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}.eyebrow,.step{color:var(--accent)}h1,h2{font-family:Arial,Helvetica,sans-serif;letter-spacing:0}h1{font-size:clamp(48px,9vw,86px);line-height:.95;margin:16px 0}h2{font-size:30px;line-height:1.15;margin:8px 0 18px}.dek{max-width:720px;font-size:21px;color:var(--muted)}.meta{display:flex;gap:10px 30px;flex-wrap:wrap;margin-top:24px;text-transform:none;letter-spacing:0}.flag{color:var(--good)}nav{margin:28px 0;padding:18px 0;border-bottom:1px solid var(--rule);text-transform:none;letter-spacing:0}nav a{color:var(--muted);margin-right:18px;text-decoration-color:var(--accent);text-underline-offset:3px}section{max-width:760px;margin:58px auto 0}p{margin:14px 0}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--wash);padding:2px 5px;border-radius:3px}pre{overflow:auto;background:var(--code);color:#edf2f7;padding:18px 20px;border-radius:5px;font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}table{width:100%;border-collapse:collapse;margin:22px 0;font-size:15px}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--rule)}th{font-family:Arial,Helvetica,sans-serif}.note{background:var(--wash);border-left:4px solid var(--accent);padding:15px 18px}.result{border:1px solid #9dc9c2;background:#eef8f6;padding:18px 20px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}footer{max-width:760px;margin:68px auto 0;padding-top:20px;border-top:1px solid var(--rule);color:var(--muted);text-transform:none;letter-spacing:0}@media(max-width:620px){body{font-size:16px}.page{padding-top:32px}h1{font-size:48px}h2{font-size:25px}.meta{display:block}.meta span{display:block;margin-top:6px}}
+</style>
+</head>
+<body><div class="page">
+<header>
+  <div class="eyebrow">Black Hat MEA CTF Qualification 2026 / Crypto</div>
+  <h1>Popcnt Oracle</h1>
+  <p class="dek">Recovering a random RSA plaintext from nothing more than the Hamming weights of chosen decryptions.</p>
+  <div class="meta"><span>Author: FlagYard</span><span>RSA-2048</span><span class="flag">BHFlagY{f2bfc77b60aa990dc06ef4e1830c578e}</span></div>
+</header>
+<nav>
+  <a href="#source">Source</a><a href="#multiple">Chosen multiples</a><a href="#bits">Binary recovery</a><a href="#collisions">Collisions</a><a href="#queries">Query budget</a><a href="#result">Result</a>
+</nav>
+
+<main>
+<section id="source">
+  <div class="step">01 / Challenge</div>
+  <h2>A decryption oracle that counts bits</h2>
+  <p>The service generates a fresh 2048-bit RSA modulus, chooses a random plaintext <code>m</code>, and publishes <code>c = m^e mod n</code>. Submitting the exact integer <code>m</code> prints the flag. Every other integer is decrypted, but the service reveals only the result's population count.</p>
+  <pre>e = 65537
+n = p * q
+d = pow(e, -1, (p-1)*(q-1))
+m = secrets.randbelow(n)
+c = pow(m, e, n)
+
+while True:
+    x = int(input("x&gt; "))
+    if x == m:
+        print(flag)
+        break
+    print(pow(x, d, n).bit_count())</pre>
+  <p>A single Hamming weight carries little positional information. Raw RSA's multiplicative structure lets us ask for the Hamming weights of a carefully related sequence instead.</p>
+</section>
+
+<section id="multiple">
+  <div class="step">02 / Oracle construction</div>
+  <h2>Ask for chosen multiples of the secret</h2>
+  <p>For a public multiplier <code>r</code>, submit <code>x = c * r^e mod n</code>. Decryption returns <code>m*r mod n</code>, so the response is <code>HW(m*r mod n)</code>.</p>
+  <pre>x^d = (m^e * r^e)^d = m*r mod n</pre>
+  <p>Set <code>r = 2^i</code> and define <code>a_i = m*2^i mod n</code>. Consecutive terms obey:</p>
+  <pre>a_(i+1) = 2*a_i       when a_i &lt; n/2
+a_(i+1) = 2*a_i - n   when a_i &gt;= n/2</pre>
+  <p>The lower-half case is a left shift, so <code>HW(a_(i+1)) = HW(a_i)</code> exactly. A changed weight proves that modular reduction occurred and that <code>a_i</code> occupied the upper half.</p>
+</section>
+
+<section id="bits">
+  <div class="step">03 / Binary expansion</div>
+  <h2>Each half decision is one digit of m/n</h2>
+  <p>The doubling map shifts the binary expansion of the fraction <code>m/n</code>. The upper-half decision at step <code>i</code> is its next binary digit:</p>
+  <pre>m/n = 0.b_0 b_1 b_2 ...
+b_i = floor(2*a_i/n)</pre>
+  <p>After <code>L = bit_length(n)</code> decisions, a prefix <code>P</code> gives the integer interval</p>
+  <pre>ceil(n*P / 2^L) &lt;= m &lt;= ceil(n*(P+1) / 2^L) - 1.</pre>
+  <p>Since <code>n &lt; 2^L</code>, the interval's width is below one. A correct prefix therefore identifies the exact plaintext.</p>
+</section>
+
+<section id="collisions">
+  <div class="step">04 / Collision handling</div>
+  <h2>Use the modular negative as the second witness</h2>
+  <p>Reduction may occasionally preserve Hamming weight. Query the modular negative <code>z_i = n-a_i</code> as well. It lies in the opposite half, so exactly one of the positive and negative doubling steps reduces.</p>
+  <table><thead><tr><th>Positive count</th><th>Negative count</th><th>Recovered bit</th></tr></thead><tbody>
+    <tr><td>changes</td><td>unchanged</td><td><code>1</code></td></tr>
+    <tr><td>unchanged</td><td>changes</td><td><code>0</code></td></tr>
+    <tr><td>unchanged</td><td>unchanged</td><td>erasure</td></tr>
+  </tbody></table>
+  <p>The winning instance left only 18 erasures. Sparse streams for <code>3*m*2^i mod n</code>, queried only beside those positions, constrain the same binary prefix and prune each wrong branch. One secondary position also collided, so one <code>r = 5</code> constraint completed the recovery.</p>
+  <p>At each search depth, the known prefix bounds <code>frac(r*2^i*m/n)</code>. Once that interval lies wholly below or above one half, the secondary bit is fixed and an inconsistent branch is discarded. The solver explored 2067 nodes for a 2048-bit answer.</p>
+</section>
+
+<section id="queries">
+  <div class="step">05 / Remote engineering</div>
+  <h2>Skip negative queries whose answer is implied</h2>
+  <p>The service spends most of its time on RSA private operations. The exploit first collects all positive weights and asks for <code>HW(n-m)</code> once. When a positive count changes, the negative side did not reduce, so its next weight is equal to its current weight and requires no query. A fresh negative weight is requested only after an equal positive transition.</p>
+  <pre>2049 positive observations
+1030 adaptive negative observations
+18 sparse r=3 collision checks
+ 1 sparse r=5 fallback</pre>
+  <p>This brought the main workload down from roughly 4100 to 3079 oracle operations and allowed the exploit to finish within the live instance lifetime.</p>
+</section>
+
+<section>
+  <div class="step">06 / Candidate verification</div>
+  <h2>Accept only a complete orbit match</h2>
+  <p>At 2048 decisions, each surviving prefix is converted into its integer interval. The solver accepts only a singleton interval, then regenerates the complete modular-doubling orbit and compares every Hamming weight with the transcript. The unique surviving integer is submitted on the original connection.</p>
+  <pre>low  = ceil(n * prefix / 2**L)
+high = ceil(n * (prefix + 1) / 2**L) - 1
+
+assert low == high
+assert observed_weights == orbit_weights(low)</pre>
+</section>
+
+<section id="result">
+  <div class="step">07 / Winning run</div>
+  <h2>Plaintext recovered</h2>
+  <pre>[*] Connected: n is 2048 bits, e = 65537
+[*] Collecting 2049 positive observations
+[*] Collecting 1030 adaptive negative observations
+[*] Primary stream has 18 collisions; resolving only those
+[*] 1 secondary collisions remain; adding r = 5
+[*] primary erasures: 18; multipliers: [1, 3, 5]
+[*] explored 2067 prefix nodes
+[*] Plaintext recovered; submitting it
+BHFlagY{f2bfc77b60aa990dc06ef4e1830c578e}}</pre>
+  <p class="note">The deployed process printed a duplicated final brace. Normalizing the standard FlagYard wrapper gives the flag below.</p>
+  <div class="result">BHFlagY{f2bfc77b60aa990dc06ef4e1830c578e}</div>
+  <h2 style="margin-top:42px">Reproduce</h2>
+  <pre>cd crypto/Popcnt-Oracle
+python3 solve/exploit.py tcp.flagyard.com PORT --timeout 90</pre>
+  <p>The exploit uses only the Python standard library. Keep the same socket open through collection and submission because a new connection creates a fresh key and plaintext.</p>
+</section>
+</main>
+<footer>Black Hat MEA CTF Qualification 2026 · Popcnt Oracle · Full artifacts and source are stored beside this page.</footer>
+</div></body></html>

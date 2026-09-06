@@ -1,0 +1,15 @@
+Popcnt Oracle — successful live session
+Endpoint: tcp.flagyard.com:26687
+
+[*] Connected: n is 2048 bits, e = 65537
+[*] Collecting 2049 positive observations
+[*] Collecting 1030 adaptive negative observations
+[*] Primary stream has 18 collisions; resolving only those
+[*] 1 secondary collisions remain; adding r = 5
+[*] primary erasures: 18; multipliers: [1, 3, 5]
+[*] explored 2067 prefix nodes
+[*] Plaintext recovered; submitting it
+BHFlagY{f2bfc77b60aa990dc06ef4e1830c578e}}
+
+Note: the deployed service emitted a duplicated trailing brace. The normalized flag is:
+BHFlagY{f2bfc77b60aa990dc06ef4e1830c578e}

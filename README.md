@@ -9,6 +9,7 @@ Writeups and solution artifacts.
 | [Qfact](forensics/Qfact/) | Forensics | `BHFlagY{d3f3nd3r_qu4r4nt1n3_r3c0v3ry_2026}` |
 | [Whisper](forensics/Whisper/) | Forensics | `BHFlagY{l0c4l_0ll4m4_llm_f4r3n51c5_2026}` |
 | [Hokan](crypto/Hokan/) | Crypto | `BHFlagY{b76085b3a7563a438da13397e0a8da14}` |
+| [Popcnt Oracle](crypto/Popcnt-Oracle/) | Crypto | `BHFlagY{f2bfc77b60aa990dc06ef4e1830c578e}` |
 | [Lumen](web/Lumen/) | Web | `BHFlagY{28b936a8477bc9f9a5a5a5c23ae1878d}` |
 
 ## Repository layout
